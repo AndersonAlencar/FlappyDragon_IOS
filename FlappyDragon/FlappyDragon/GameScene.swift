@@ -11,11 +11,43 @@ import GameplayKit
 
 class GameScene: SKScene {
     
-    var floor: SKSpriteNode!
-    var intro: SKSpriteNode!
-    var player: SKSpriteNode!
-    var velocity: Double = 100.0
-    var gameArea: CGFloat = 410.0
+    lazy var floor: SKSpriteNode = {
+        var floor = SKSpriteNode(imageNamed: "floor")
+        return floor
+    }()
+    lazy var intro: SKSpriteNode = {
+        var intro = SKSpriteNode(imageNamed: "intro")
+        return intro
+    }()
+    lazy var player: SKSpriteNode = {
+        var player = SKSpriteNode(imageNamed: "player1")
+        return player
+    }()
+    lazy var scoreLabel: SKLabelNode = {
+        var scoreLabel = SKLabelNode(fontNamed: "Chalkduster")
+        return scoreLabel
+    }()
+    lazy var velocity: Double = {
+        return 100.0
+    }()
+    lazy var gameArea: CGFloat = {
+        return 410.0
+    }()
+    lazy var gameFinish: Bool = {
+        return false
+    }()
+    lazy var gameStart: Bool = {
+        return false
+    }()
+    lazy var restart: Bool = {
+        return false
+    }()
+    lazy var score: Int = {
+        return 0
+    }()
+    lazy var flyForce: CGFloat = {
+        return 30.0
+    }()
     
     override func didMove(to view: SKView) {
         
@@ -35,14 +67,12 @@ class GameScene: SKScene {
     }
     
     func addFloor() {
-        floor = SKSpriteNode(imageNamed: "floor")
         floor.position = CGPoint(x: floor.size.width/2, y: self.size.height - gameArea - floor.size.height/2)
         floor.zPosition = 2
         addChild(floor)
     }
     
     func addIntro() {
-        intro = SKSpriteNode(imageNamed: "intro")
         intro.alpha = 0.5
         intro.position = CGPoint(x: self.size.width/2, y: self.size.height - 210)
         intro.zPosition = 3
@@ -58,7 +88,6 @@ class GameScene: SKScene {
     }
     
     func addPlayer() {
-        player = SKSpriteNode(imageNamed: "player1")
         player.zPosition = 4
         player.position = CGPoint(x: 65, y: self.size.height - gameArea/2)
         
@@ -81,14 +110,45 @@ class GameScene: SKScene {
         let repeatAction = SKAction.repeatForever(sequenceActions)
         floor.run(repeatAction)
     }
+    
+    func addScore() {
+        scoreLabel.fontSize = 94
+        scoreLabel.text = "\(score)"
+        scoreLabel.zPosition = 5
+        scoreLabel.position = CGPoint(x: self.size.width/2 , y: self.size.height - 100)
+        scoreLabel.color = .white
+        scoreLabel.alpha = 0.8
+        addChild(scoreLabel)
+    }
    
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
-        
+
+        if !gameFinish {
+            if !gameStart {
+                intro.removeFromParent()
+                addScore()
+                
+                player.physicsBody = SKPhysicsBody(circleOfRadius: player.size.width/2 - 10) // corpo físico redondo e mais simples para evitar gasto excessivo de processamento
+                player.physicsBody?.isDynamic = true
+                player.physicsBody?.allowsRotation = true
+                player.physicsBody?.applyImpulse(CGVector(dx: 0, dy: flyForce))
+                
+                gameStart = true
+            } else {
+                player.physicsBody?.velocity = CGVector.zero // zerando a velocidade para que ele não sofra a força gerada pela acelaração da gravidade e seja aplicada apenas a flyForce como resultante
+                player.physicsBody?.applyImpulse(CGVector(dx: 0, dy: flyForce))
+            }
+        }
     }
     
     
     
     override func update(_ currentTime: TimeInterval) {
-        // Called before each frame is rendered
+        
+        if gameStart {
+            let yVelocity = player.physicsBody!.velocity.dy * 0.001 as CGFloat // a rotação acontece em radianos, por isso diminuimos bastante o valor da velocidade para compensar a rotação 
+            player.zRotation = yVelocity
+            
+        }
     }
 }
